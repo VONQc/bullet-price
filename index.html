@@ -726,16 +726,32 @@
 
     <!-- Toast 容器 -->
     <div id="toastContainer"></div>
-
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script>
     (function() {
+        // ==================== 🔥 Firebase 配置（已替换为你的真实配置） ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAc6QXnTuqUmfhoNVsPuzEpexGhQuLkTms",
+            authDomain: "bullet-price.firebaseapp.com",
+            databaseURL: "https://bullet-price-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "bullet-price",
+            storageBucket: "bullet-price.firebasestorage.app",
+            messagingSenderId: "193851931243",
+            appId: "1:193851931243:web:2f2f8cff852a5e0289cf2e"
+        };
+
+        // 初始化 Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         // ==================== 常量 ====================
-        const STORAGE_KEY = 'df_bullet_data_time';
         const PASSWORD_KEY = 'df_admin_password';
         const SESSION_VERIFIED = 'df_admin_verified';
         const DEFAULT_PASSWORD = 'admin123';
+        const DB_REF_PATH = '/bulletData';
 
-        // ==================== 默认数据（已改为带时间） ====================
+        // ==================== 默认数据 ====================
         const defaultData = {
             dates: [
                 '06-21 14:30', '06-22 14:30', '06-23 14:30', '06-24 14:30',
@@ -754,28 +770,9 @@
         };
 
         // ==================== 全局数据 ====================
-        let data = loadData();
+        let data = JSON.parse(JSON.stringify(defaultData));
 
-        function loadData() {
-            try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (parsed.dates && Array.isArray(parsed.dates) && parsed.bullets && Array.isArray(parsed.bullets)) {
-                        const valid = parsed.bullets.every(b => b.name && b.color && Array.isArray(b.prices) && b.prices.length === parsed.dates.length);
-                        if (valid && parsed.dates.length > 0) return parsed;
-                    }
-                }
-            } catch (e) {}
-            return JSON.parse(JSON.stringify(defaultData));
-        }
-
-        function saveData(d = data) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
-            updateSaveIndicator('saved');
-        }
-
-        // Toast
+        // ==================== Toast ====================
         function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -789,48 +786,106 @@
             }, 2200);
         }
 
-        // 保存指示器
-        let saveTimeout = null;
+        // ==================== 保存指示器 ====================
         function updateSaveIndicator(status) {
             const dot = document.getElementById('saveDot');
             const text = document.getElementById('saveText');
             dot.classList.remove('saving', 'unsaved');
             if (status === 'saving') {
                 dot.classList.add('saving');
-                text.textContent = '保存中...';
+                text.textContent = '同步中...';
             } else if (status === 'unsaved') {
                 dot.classList.add('unsaved');
                 text.textContent = '未保存';
             } else {
-                text.textContent = '已保存';
+                text.textContent = '已同步';
             }
         }
 
+        // ==================== 云端操作 ====================
+        function loadFromCloud(callback) {
+            db.ref(DB_REF_PATH).once('value').then(snapshot => {
+                const val = snapshot.val();
+                if (val && val.dates && val.bullets) {
+                    data = val;
+                } else {
+                    data = JSON.parse(JSON.stringify(defaultData));
+                    saveToCloud(data);
+                }
+                if (callback) callback();
+                refreshDashboard();
+                updateSaveIndicator('saved');
+            }).catch(err => {
+                console.error('Firebase 加载失败，使用本地备份', err);
+                loadLocalFallback();
+                if (callback) callback();
+                refreshDashboard();
+                updateSaveIndicator('saved');
+            });
+        }
+
+        function saveToCloud(d) {
+            db.ref(DB_REF_PATH).set(d)
+                .then(() => updateSaveIndicator('saved'))
+                .catch(err => {
+                    console.error('保存失败', err);
+                    updateSaveIndicator('unsaved');
+                });
+        }
+
+        function loadLocalFallback() {
+            const raw = localStorage.getItem('df_bullet_data_backup');
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.dates && parsed.bullets) data = parsed;
+                } catch(e) {}
+            }
+        }
+
+        function localBackup() {
+            localStorage.setItem('df_bullet_data_backup', JSON.stringify(data));
+        }
+
+        function listenCloudUpdates() {
+            db.ref(DB_REF_PATH).on('value', snapshot => {
+                const val = snapshot.val();
+                if (val && val.dates && val.bullets) {
+                    if (JSON.stringify(val) !== JSON.stringify(data)) {
+                        data = val;
+                        refreshDashboard();
+                        updateSaveIndicator('saved');
+                    }
+                }
+            });
+        }
+
+        function manualSave() {
+            updateSaveIndicator('saving');
+            syncEditableTableToData();
+            saveToCloud(data);
+            localBackup();
+            refreshDashboard();
+            showToast('数据已保存到云端');
+        }
+
+        let saveTimeout;
         function autoSave() {
             updateSaveIndicator('saving');
             if (saveTimeout) clearTimeout(saveTimeout);
             saveTimeout = setTimeout(() => {
-                saveData(data);
+                syncEditableTableToData();
+                saveToCloud(data);
+                localBackup();
                 refreshDashboard();
-                updateSaveIndicator('saved');
             }, 600);
         }
 
-        function manualSave() {
-            if (saveTimeout) clearTimeout(saveTimeout);
-            saveData(data);
-            refreshDashboard();
-            updateSaveIndicator('saved');
-            showToast('数据已保存！');
-        }
-
-        // 同步编辑表格到数据
+        // ==================== 同步表格 ====================
         function syncEditableTableToData() {
             const tbody = document.querySelector('#editableTable tbody');
             if (!tbody) return;
             const rows = tbody.querySelectorAll('tr');
-            const datesCount = data.dates.length;
-
             for (let bi = 0; bi < data.bullets.length; bi++) {
                 const row = rows[bi];
                 if (!row) continue;
@@ -838,13 +893,27 @@
                 if (nameInput) data.bullets[bi].name = nameInput.value.trim() || data.bullets[bi].name;
                 const colorInput = row.querySelector('input[data-field="color"]');
                 if (colorInput) data.bullets[bi].color = colorInput.value;
-                for (let di = 0; di < datesCount; di++) {
+                for (let di = 0; di < data.dates.length; di++) {
                     const priceInput = row.querySelector(`input[data-bi="${bi}"][data-di="${di}"]`);
                     if (priceInput) {
                         const val = parseFloat(priceInput.value);
                         data.bullets[bi].prices[di] = isNaN(val) ? 0 : val;
                     }
                 }
+            }
+        }
+
+        function updateDataFromInput(input) {
+            const field = input.getAttribute('data-field');
+            const bi = parseInt(input.getAttribute('data-bi'));
+            const di = parseInt(input.getAttribute('data-di'));
+            if (field === 'name' && bi >= 0 && bi < data.bullets.length) {
+                data.bullets[bi].name = input.value.trim() || data.bullets[bi].name;
+            } else if (field === 'color' && bi >= 0 && bi < data.bullets.length) {
+                data.bullets[bi].color = input.value;
+            } else if (di !== undefined && !isNaN(di) && bi >= 0 && bi < data.bullets.length && di >= 0 && di < data.dates.length) {
+                const val = parseFloat(input.value);
+                data.bullets[bi].prices[di] = isNaN(val) ? 0 : val;
             }
         }
 
@@ -877,13 +946,12 @@
             data.bullets.forEach(b => {
                 const prices = b.prices;
                 if (prices.length === 0) return;
-                const last = prices[prices.length - 1];
-                const prev = prices.length >= 2 ? prices[prices.length - 2] : undefined;
+                const last = prices[prices.length-1];
+                const prev = prices.length >= 2 ? prices[prices.length-2] : undefined;
                 const change = formatChange(last, prev);
                 const maxP = Math.max(...prices);
                 const minP = Math.min(...prices);
-                const avg = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(0);
-
+                const avg = (prices.reduce((a,b)=>a+b,0)/prices.length).toFixed(0);
                 grid.innerHTML += `
                     <div class="stat-card" style="--card-accent: ${b.color};">
                         <div class="stat-name">${escapeHTML(b.name)}</div>
@@ -913,18 +981,17 @@
             data.bullets.forEach(b => headHtml += `<th>${escapeHTML(b.name)} (₽)</th>`);
             headHtml += '</tr>';
             thead.innerHTML = headHtml;
-
             let bodyHtml = '';
             for (let i = 0; i < data.dates.length; i++) {
                 bodyHtml += `<tr><td><strong>${escapeHTML(data.dates[i])}</strong></td>`;
                 data.bullets.forEach(b => {
                     const price = b.prices[i] !== undefined ? b.prices[i] : '-';
                     let cls = '';
-                    if (i > 0 && b.prices[i] !== undefined && b.prices[i - 1] !== undefined) {
-                        const diff = b.prices[i] - b.prices[i - 1];
+                    if (i > 0 && b.prices[i] !== undefined && b.prices[i-1] !== undefined) {
+                        const diff = b.prices[i] - b.prices[i-1];
                         cls = diff > 0 ? 'change-up' : (diff < 0 ? 'change-down' : '');
                     }
-                    bodyHtml += `<td class="price-cell ${cls}">${typeof price === 'number' ? '₽' + price : price}</td>`;
+                    bodyHtml += `<td class="price-cell ${cls}">${typeof price === 'number' ? '₽'+price : price}</td>`;
                 });
                 bodyHtml += '</tr>';
             }
@@ -934,16 +1001,11 @@
         function renderChart() {
             const ctx = document.getElementById('priceChart').getContext('2d');
             if (chartInstance) chartInstance.destroy();
-
-            if (data.bullets.length === 0 || data.dates.length === 0) {
-                chartInstance = null;
-                return;
-            }
-
+            if (data.bullets.length === 0 || data.dates.length === 0) return;
             const datasets = data.bullets.map(b => {
                 const pointColors = b.prices.map((p, idx) => {
                     if (idx === 0) return b.color;
-                    return p >= b.prices[idx - 1] ? '#2ecc71' : '#e74c3c';
+                    return p >= b.prices[idx-1] ? '#2ecc71' : '#e74c3c';
                 });
                 return {
                     label: b.name,
@@ -959,7 +1021,6 @@
                     pointHoverRadius: 7,
                 };
             });
-
             chartInstance = new Chart(ctx, {
                 type: 'line',
                 data: { labels: data.dates, datasets },
@@ -967,38 +1028,10 @@
                     responsive: true,
                     maintainAspectRatio: true,
                     interaction: { intersect: false, mode: 'index' },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: '#1e2e3c',
-                            titleColor: '#f0b90b',
-                            bodyColor: '#ddd',
-                            borderColor: '#2a4055',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: (ctx) => {
-                                    const idx = ctx.dataIndex;
-                                    const ds = ctx.dataset;
-                                    const price = ds.data[idx];
-                                    let label = `${ds.label}: ₽${price}`;
-                                    if (idx > 0) {
-                                        const prev = ds.data[idx - 1];
-                                        const diff = price - prev;
-                                        const sign = diff > 0 ? '+' : '';
-                                        label += `  涨跌: ${sign}${diff}`;
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
                         x: { ticks: { color: '#8094a8', maxRotation: 45 }, grid: { color: '#1f3142' } },
-                        y: {
-                            beginAtZero: false,
-                            ticks: { color: '#8094a8', callback: v => '₽' + v },
-                            grid: { color: '#1f3142' }
-                        }
+                        y: { beginAtZero: false, ticks: { color: '#8094a8', callback: v => '₽'+v }, grid: { color: '#1f3142' } }
                     }
                 }
             });
@@ -1007,10 +1040,7 @@
         function buildLegend() {
             const container = document.getElementById('legendContainer');
             container.innerHTML = '';
-            if (!chartInstance) {
-                container.innerHTML = '<span style="color:var(--text-secondary);">暂无图表</span>';
-                return;
-            }
+            if (!chartInstance) return;
             data.bullets.forEach((b, index) => {
                 const item = document.createElement('div');
                 item.className = 'legend-item';
@@ -1031,75 +1061,42 @@
             return div.innerHTML;
         }
 
-        // ==================== 管理面板渲染 ====================
+        // ==================== 管理面板 ====================
         function renderDateTags() {
             const container = document.getElementById('dateTagsContainer');
             container.innerHTML = '';
             data.dates.forEach((d, i) => {
                 const tag = document.createElement('span');
                 tag.className = 'date-tag';
-                tag.innerHTML = `${escapeHTML(d)} <span class="remove-date" title="删除此时间点" data-di="${i}">✕</span>`;
+                tag.innerHTML = `${escapeHTML(d)} <span class="remove-date" data-di="${i}">✕</span>`;
                 container.appendChild(tag);
             });
-            if (data.dates.length === 0) {
-                container.innerHTML = '<span style="color:var(--text-secondary);">暂无日期，请添加</span>';
-            }
         }
 
         function renderEditableTable() {
             syncEditableTableToData();
             const thead = document.querySelector('#editableTable thead');
             const tbody = document.querySelector('#editableTable tbody');
-
             let headHtml = '<tr><th>子弹名称</th><th>颜色</th>';
-            data.dates.forEach(d => headHtml += `<th title="${escapeHTML(d)}">${escapeHTML(d)}</th>`);
+            data.dates.forEach(d => headHtml += `<th>${escapeHTML(d)}</th>`);
             headHtml += '<th>操作</th></tr>';
             thead.innerHTML = headHtml;
-
             let bodyHtml = '';
             data.bullets.forEach((b, bi) => {
                 bodyHtml += '<tr>';
-                bodyHtml += `<td><input type="text" data-field="name" data-bi="${bi}" value="${escapeHTML(b.name)}" placeholder="子弹名称"></td>`;
-                bodyHtml += `<td class="color-cell"><input type="color" data-field="color" data-bi="${bi}" value="${b.color}" title="颜色"></td>`;
+                bodyHtml += `<td><input type="text" data-field="name" data-bi="${bi}" value="${escapeHTML(b.name)}"></td>`;
+                bodyHtml += `<td class="color-cell"><input type="color" data-field="color" data-bi="${bi}" value="${b.color}"></td>`;
                 data.dates.forEach((d, di) => {
-                    const price = b.prices[di] !== undefined ? b.prices[di] : 0;
-                    bodyHtml += `<td><input type="number" data-bi="${bi}" data-di="${di}" value="${price}" step="1"></td>`;
+                    bodyHtml += `<td><input type="number" data-bi="${bi}" data-di="${di}" value="${b.prices[di]||0}" step="1"></td>`;
                 });
-                bodyHtml += `<td><button class="btn btn-xs btn-danger" onclick="removeBullet(${bi})" title="删除子弹">🗑</button></td>`;
+                bodyHtml += `<td><button class="btn btn-xs btn-danger" onclick="removeBullet(${bi})">🗑</button></td>`;
                 bodyHtml += '</tr>';
             });
-
-            if (data.bullets.length === 0) {
-                bodyHtml = '<tr><td colspan="' + (3 + data.dates.length) + '" style="text-align:center;color:var(--text-secondary);padding:20px;">暂无子弹，请添加</td></tr>';
-            }
             tbody.innerHTML = bodyHtml;
-
-            // 绑定自动保存
             tbody.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', function() {
-                    updateDataFromInput(this);
-                    autoSave();
-                });
-                input.addEventListener('change', function() {
-                    updateDataFromInput(this);
-                    autoSave();
-                });
+                input.addEventListener('input', function() { updateDataFromInput(this); autoSave(); });
+                input.addEventListener('change', function() { updateDataFromInput(this); autoSave(); });
             });
-        }
-
-        function updateDataFromInput(input) {
-            const field = input.getAttribute('data-field');
-            const bi = parseInt(input.getAttribute('data-bi'));
-            const di = parseInt(input.getAttribute('data-di'));
-
-            if (field === 'name' && bi >= 0 && bi < data.bullets.length) {
-                data.bullets[bi].name = input.value.trim() || data.bullets[bi].name;
-            } else if (field === 'color' && bi >= 0 && bi < data.bullets.length) {
-                data.bullets[bi].color = input.value;
-            } else if (di !== undefined && !isNaN(di) && bi >= 0 && bi < data.bullets.length && di >= 0 && di < data.dates.length) {
-                const val = parseFloat(input.value);
-                data.bullets[bi].prices[di] = isNaN(val) ? 0 : val;
-            }
         }
 
         function refreshAdminPanel() {
@@ -1110,208 +1107,149 @@
         // ==================== 管理操作 ====================
         function addDate() {
             syncEditableTableToData();
-            // 提示用户输入日期和时间，格式示例
-            const example = data.dates.length > 0 ? data.dates[data.dates.length - 1] : '07-05 14:30';
-            const newDate = prompt(`请输入新日期+时间（格式：MM-DD HH:mm，例如 ${example}）：`, '');
-            if (!newDate || !newDate.trim()) return;
-            const trimmed = newDate.trim();
-            if (data.dates.includes(trimmed)) {
-                showToast('该日期时间已存在！', 'error');
-                return;
-            }
-            data.dates.push(trimmed);
-            data.bullets.forEach(b => {
-                const lastPrice = b.prices.length > 0 ? b.prices[b.prices.length - 1] : 100;
-                b.prices.push(lastPrice);
-            });
+            const newDate = prompt('请输入新日期+时间（格式：MM-DD HH:mm）：', '');
+            if (!newDate) return;
+            if (data.dates.includes(newDate)) { showToast('该时间已存在', 'error'); return; }
+            data.dates.push(newDate);
+            data.bullets.forEach(b => b.prices.push(b.prices.length>0 ? b.prices[b.prices.length-1] : 100));
             refreshAdminPanel();
-            autoSave();
-            showToast(`时间点 "${trimmed}" 已添加`);
+            saveToCloud(data); localBackup();
         }
 
         function removeDate(di) {
-            if (di < 0 || di >= data.dates.length) return;
             syncEditableTableToData();
-            const dateName = data.dates[di];
-            if (!confirm(`确定要删除时间点 "${dateName}" 及其所有子弹价格吗？`)) return;
+            if (!confirm('确定删除该时间点？')) return;
             data.dates.splice(di, 1);
             data.bullets.forEach(b => b.prices.splice(di, 1));
             refreshAdminPanel();
-            autoSave();
-            showToast(`时间点 "${dateName}" 已删除`);
+            saveToCloud(data); localBackup();
         }
 
         function addBullet() {
             syncEditableTableToData();
-            const name = prompt('请输入新子弹名称：', '');
-            if (!name || !name.trim()) return;
-            const trimmed = name.trim();
-            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
-            const prices = new Array(data.dates.length).fill(100);
-            data.bullets.push({ name: trimmed, color: randomColor, prices });
+            const name = prompt('子弹名称：', '');
+            if (!name) return;
+            const color = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+            data.bullets.push({ name, color, prices: new Array(data.dates.length).fill(100) });
             refreshAdminPanel();
-            autoSave();
-            showToast(`子弹 "${trimmed}" 已添加`);
+            saveToCloud(data); localBackup();
         }
 
         function removeBullet(bi) {
-            if (bi < 0 || bi >= data.bullets.length) return;
             syncEditableTableToData();
-            const name = data.bullets[bi].name;
-            if (!confirm(`确定要删除子弹 "${name}" 吗？`)) return;
+            if (!confirm(`确定删除 ${data.bullets[bi].name}？`)) return;
             data.bullets.splice(bi, 1);
             refreshAdminPanel();
-            autoSave();
-            showToast(`子弹 "${name}" 已删除`);
+            saveToCloud(data); localBackup();
         }
 
         function exportData() {
             syncEditableTableToData();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+            const blob = new Blob([JSON.stringify(data)], {type:'application/json'});
             const a = document.createElement('a');
-            a.href = url;
-            a.download = '三角洲子弹价格数据_带时间_' + new Date().toISOString().slice(0, 10) + '.json';
-            document.body.appendChild(a);
+            a.href = URL.createObjectURL(blob);
+            a.download = 'bullet-data.json';
             a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast('数据已导出为 JSON 文件');
+            showToast('导出成功');
         }
 
         function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = e => {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    if (!imported.dates || !Array.isArray(imported.dates) || !imported.bullets || !Array.isArray(imported.bullets)) {
-                        throw new Error('格式错误');
-                    }
-                    if (!confirm(`导入数据（${imported.dates.length} 个时间点，${imported.bullets.length} 种子弹），当前数据将被覆盖。确定吗？`)) return;
+                    if (!imported.dates || !imported.bullets) throw new Error();
+                    if (!confirm('覆盖当前数据？')) return;
                     data = imported;
-                    data.bullets.forEach(b => {
-                        while (b.prices.length < data.dates.length) b.prices.push(b.prices.length > 0 ? b.prices[b.prices.length - 1] : 100);
-                        b.prices = b.prices.slice(0, data.dates.length);
-                    });
-                    saveData(data);
-                    refreshAdminPanel();
-                    refreshDashboard();
-                    showToast('数据导入成功！');
-                } catch (err) {
-                    showToast('导入失败：文件格式不正确', 'error');
-                }
+                    saveToCloud(data); localBackup();
+                    refreshAdminPanel(); refreshDashboard();
+                    showToast('导入成功');
+                } catch { showToast('文件格式错误', 'error'); }
             };
             reader.readAsText(file);
             event.target.value = '';
         }
 
         function resetData() {
-            if (!confirm('确定要重置为默认数据吗？所有当前数据将丢失！')) return;
+            if (!confirm('重置为默认数据？所有修改将丢失！')) return;
             data = JSON.parse(JSON.stringify(defaultData));
-            saveData(data);
-            refreshAdminPanel();
-            refreshDashboard();
-            showToast('已重置为默认数据');
+            saveToCloud(data); localBackup();
+            refreshAdminPanel(); refreshDashboard();
+            showToast('已重置');
         }
 
         function changePasswordPrompt() {
-            const current = prompt('请输入当前密码：');
-            if (!current) return;
-            const storedPassword = localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
-            if (current !== storedPassword) {
-                showToast('当前密码错误！', 'error');
-                return;
-            }
-            const newPass = prompt('请输入新密码（至少4位）：');
-            if (!newPass || newPass.length < 4) {
-                showToast('新密码至少需要4位！', 'error');
-                return;
-            }
-            const confirmPass = prompt('请再次输入新密码确认：');
-            if (newPass !== confirmPass) {
-                showToast('两次密码不一致！', 'error');
-                return;
-            }
-            localStorage.setItem(PASSWORD_KEY, newPass);
-            showToast('密码修改成功！请牢记新密码。');
+            const cur = prompt('当前密码：');
+            if (!cur) return;
+            const stored = localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
+            if (cur !== stored) { showToast('密码错误', 'error'); return; }
+            const newP = prompt('新密码（至少4位）：');
+            if (!newP || newP.length<4) { showToast('至少4位', 'error'); return; }
+            const confirm = prompt('确认新密码：');
+            if (newP !== confirm) { showToast('不匹配', 'error'); return; }
+            localStorage.setItem(PASSWORD_KEY, newP);
+            showToast('密码已修改');
         }
 
-        // ==================== 密码验证 ====================
         function verifyPassword() {
             const input = document.getElementById('passwordInput');
-            const storedPassword = localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD;
-            if (input.value === storedPassword) {
+            if (input.value === (localStorage.getItem(PASSWORD_KEY) || DEFAULT_PASSWORD)) {
                 sessionStorage.setItem(SESSION_VERIFIED, 'true');
                 document.getElementById('passwordGate').style.display = 'none';
                 document.getElementById('adminMain').style.display = 'block';
-                document.getElementById('passwordError').style.display = 'none';
                 refreshAdminPanel();
-                showToast('验证成功，欢迎进入管理后台');
+                showToast('验证成功');
             } else {
                 document.getElementById('passwordError').style.display = 'block';
-                input.focus();
                 input.select();
             }
         }
 
         function checkAdminAccess() {
-            const verified = sessionStorage.getItem(SESSION_VERIFIED) === 'true';
-            if (verified) {
+            if (sessionStorage.getItem(SESSION_VERIFIED)) {
                 document.getElementById('passwordGate').style.display = 'none';
                 document.getElementById('adminMain').style.display = 'block';
                 refreshAdminPanel();
-            } else {
-                document.getElementById('passwordGate').style.display = 'flex';
-                document.getElementById('adminMain').style.display = 'none';
             }
         }
 
         // ==================== 视图切换 ====================
-        function switchView(viewName) {
-            if (viewName === 'admin') {
+        function switchView(view) {
+            if (view === 'admin') {
                 syncEditableTableToData();
                 checkAdminAccess();
             } else {
                 syncEditableTableToData();
-                saveData(data);
+                saveToCloud(data); localBackup();
                 refreshDashboard();
             }
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-            const viewEl = document.getElementById(viewName === 'dashboard' ? 'viewDashboard' : 'viewAdmin');
-            const tabEl = document.getElementById(viewName === 'dashboard' ? 'tabDashboard' : 'tabAdmin');
-            if (viewEl) viewEl.classList.add('active');
-            if (tabEl) tabEl.classList.add('active');
+            document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+            document.getElementById(view==='dashboard'?'viewDashboard':'viewAdmin').classList.add('active');
+            document.getElementById(view==='dashboard'?'tabDashboard':'tabAdmin').classList.add('active');
         }
 
         // ==================== 事件绑定 ====================
-        document.getElementById('tabDashboard').addEventListener('click', () => switchView('dashboard'));
-        document.getElementById('tabAdmin').addEventListener('click', () => switchView('admin'));
-
-        document.getElementById('passwordInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') verifyPassword();
-        });
-
-        // 日期标签删除事件委托
-        document.getElementById('dateTagsContainer').addEventListener('click', function(e) {
+        document.getElementById('tabDashboard').addEventListener('click', ()=>switchView('dashboard'));
+        document.getElementById('tabAdmin').addEventListener('click', ()=>switchView('admin'));
+        document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key==='Enter') verifyPassword(); });
+        document.getElementById('dateTagsContainer').addEventListener('click', e => {
             if (e.target.classList.contains('remove-date')) {
-                const di = parseInt(e.target.getAttribute('data-di'));
+                const di = parseInt(e.target.dataset.di);
                 if (!isNaN(di)) removeDate(di);
             }
         });
-
-        // Ctrl+S 强制保存
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.key === 's') {
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey && e.key==='s') {
                 e.preventDefault();
                 syncEditableTableToData();
                 manualSave();
             }
         });
 
-        // ==================== 暴露全局函数，修复 onclick 问题 ====================
+        // ==================== 暴露全局函数 ====================
         window.verifyPassword = verifyPassword;
         window.addDate = addDate;
         window.addBullet = addBullet;
@@ -1321,17 +1259,17 @@
         window.changePasswordPrompt = changePasswordPrompt;
         window.removeBullet = removeBullet;
 
-        // ==================== 初始化 ====================
+        // ==================== 启动 ====================
         function init() {
-            refreshDashboard();
-            if (sessionStorage.getItem(SESSION_VERIFIED) === 'true') {
-                checkAdminAccess();
-            }
-            updateSaveIndicator('saved');
+            updateSaveIndicator('saving');
+            loadFromCloud(() => {
+                listenCloudUpdates();
+                if (sessionStorage.getItem(SESSION_VERIFIED)) checkAdminAccess();
+                updateSaveIndicator('saved');
+            });
         }
-
         init();
-        console.log('🔫 三角洲 · 子弹价格系统（带时间）已就绪');
+        console.log('🔫 三角洲 · 子弹价格系统（云同步版）已就绪');
     })();
 </script>
 </body>
