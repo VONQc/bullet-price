@@ -1273,7 +1273,7 @@
         init();
         // 注册 Service Worker
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/bullet-price/sw.js')
+  navigator.serviceWorker.register('/sw.js')
     .then(registration => {
       console.log('Service Worker 注册成功:', registration.scope);
     })
