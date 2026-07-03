@@ -1,7 +1,7 @@
 const CACHE_NAME = 'bullet-price-v1';
 const ASSETS_TO_CACHE = [
-  '/bullet-price/',                         // 你的站点根路径
-  '/bullet-price/index.html',
+  '/',                         // 你的站点根路径
+  '/index.html',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js'
