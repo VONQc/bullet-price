@@ -2,7 +2,7 @@
   "name": "三角洲子弹价格追踪",
   "short_name": "子弹价格",
   "description": "三角洲行动子弹每日价格趋势与后台管理",
-  "start_url": "/bullet-price/",
+  "start_url": "/"
   "display": "standalone",
   "background_color": "#0b1118",
   "theme_color": "#f0b90b",
