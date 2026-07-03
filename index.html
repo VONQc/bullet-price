@@ -1271,6 +1271,16 @@
             });
         }
         init();
+        // 注册 Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/bullet-price/sw.js')
+    .then(registration => {
+      console.log('Service Worker 注册成功:', registration.scope);
+    })
+    .catch(err => {
+      console.error('Service Worker 注册失败:', err);
+    });
+}
         console.log('🔫 三角洲 · 子弹价格系统（云同步版）已就绪');
     })();
 </script>
