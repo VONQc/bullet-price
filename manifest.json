@@ -7,15 +7,15 @@
   "background_color": "#0b1118",
   "theme_color": "#f0b90b",
   "icons": [
-    {
-      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cG9seWdvbiBwb2ludHM9IjUwLDUgNjAsNDUgOTUsMjAgNzAsNTUgOTUsOTAgNjAsNjUgNTAsOTUgNDAsNjUgNSw5MCAzMCw1NSA1LDIwIDQwLDQ1IiBmaWxsPSIjZjBiOTBiIi8+PC9zdmc+",
-      "sizes": "100x100",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cG9seWdvbiBwb2ludHM9IjI1NiwyNiAzMDcsMjMwIDQ4NiwxMDIgMzU4LDI4MiA0ODYsNDYwIDMwNywyODIgMjU2LDQ4NiAyMDUsMjgyIDI2LDEwMiAyMDUsMjMwIiBmaWxsPSIjZjBiOTBiIi8+PC9zdmc+",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
-    }
-  ]
+  {
+    "src": "icon-512.png",
+    "sizes": "512x512",
+    "type": "image/png"
+  },
+  {
+    "src": "icon-512.png",
+    "sizes": "192x192",
+    "type": "image/png"
+  }
+]
 }
