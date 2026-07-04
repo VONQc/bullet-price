@@ -710,6 +710,16 @@
                             <button class="btn btn-sm btn-primary" onclick="manualSave()">💾 强制保存</button>
                         </div>
                     </div>
+                    <!-- 数据同步中心 -->
+<div class="admin-section">
+    <h3>🔄 数据同步中心</h3>
+    <div id="syncStatus" style="font-size:0.9rem; color:var(--text-secondary);">
+        加载中...
+    </div>
+    <div class="btn-row" style="margin-top:8px;">
+        <button class="btn btn-sm" onclick="checkSyncStatus()">🔄 刷新状态</button>
+    </div>
+</div>
                     <!-- 工具区 -->
                     <div class="admin-section">
                         <h3>🛠️ 数据工具</h3>
@@ -743,6 +753,33 @@
             appId: "1:193851931243:web:2f2f8cff852a5e0289cf2e"
         };
 
+       // 读取并显示 OCR 同步状态
+function checkSyncStatus() {
+    const statusDiv = document.getElementById('syncStatus');
+    statusDiv.innerHTML = '检查中...';
+    db.ref('/bulletData/lastOcrSync').once('value').then(snapshot => {
+        const sync = snapshot.val();
+        if (sync) {
+            const time = new Date(sync.timestamp).toLocaleString('zh-CN');
+            const status = sync.status === 'success' ? '✅ 成功' : '❌ 失败';
+            statusDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span><strong>最后同步：</strong>${time}</span>
+                    <span>${status}</span>
+                </div>
+                <div style="margin-top:4px;">来源：${sync.source || '未知'}</div>
+            `;
+        } else {
+            statusDiv.innerHTML = '暂无同步记录，运行 Python 脚本后会自动显示';
+        }
+    }).catch(err => {
+        statusDiv.innerHTML = '读取失败，请检查网络';
+        console.error(err);
+    });
+}
+
+// 进入管理面板时自动调用一次
+// 在 refreshAdminPanel 函数中添加 checkSyncStatus();
         // 初始化 Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -1104,6 +1141,7 @@
         function refreshAdminPanel() {
             renderDateTags();
             renderEditableTable();
+            checkSyncStatus();  // 新增，自动读取同步状态
         }
 
         // ==================== 管理操作 ====================
