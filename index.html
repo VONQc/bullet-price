@@ -1099,7 +1099,11 @@
                 bodyHtml += `<td><input type="text" data-field="name" data-bi="${bi}" value="${escapeHTML(b.name)}"></td>`;
                 bodyHtml += `<td class="color-cell"><input type="color" data-field="color" data-bi="${bi}" value="${b.color}"></td>`;
                 data.dates.forEach((d, di) => {
-                    bodyHtml += `<td><input type="number" data-bi="${bi}" data-di="${di}" value="${b.prices[di]||0}" step="1"></td>`;
+                    bodyHtml += `<td style="display:flex; align-items:center; justify-content:center; gap:2px;">
+    <input type="number" data-bi="${bi}" data-di="${di}" value="${b.prices[di]||0}" step="1" style="width:60px;">
+    <span style="cursor:pointer; color:#e74c3c; font-weight:bold; font-size:0.8rem;" 
+          onclick="removePrice(${bi},${di})" title="清空此价格">✕</span>
+</td>`;
                 });
                 bodyHtml += `<td><button class="btn-danger-soft" onclick="removeBullet(${bi})">🗑 删除</button></td>`;
                 bodyHtml += '</tr>';
@@ -1221,6 +1225,21 @@
             refreshAdminPanel();
             saveToCloud(data); localBackup();
         }
+        function removePrice(bi, di) {
+    if (bi < 0 || bi >= data.bullets.length || di < 0 || di >= data.dates.length) return;
+    syncEditableTableToData(); // 先保存当前编辑
+    // 如果该价格已经是0，就不重复操作
+    if (data.bullets[bi].prices[di] === 0) {
+        showToast('价格已经是0', 'error');
+        return;
+        }
+    if (!confirm(`确定清空 ${data.bullets[bi].name} 在 ${data.dates[di]} 的价格吗？`)) return;
+    data.bullets[bi].prices[di] = 0;
+    saveToCloud(data);
+    localBackup();
+    refreshAdminPanel();
+    showToast('价格已清空');
+        }
 
         function exportData() {
             syncEditableTableToData();
@@ -1337,6 +1356,7 @@
         window.resetData = resetData;
         window.changePasswordPrompt = changePasswordPrompt;
         window.removeBullet = removeBullet;
+        window.removePrice = removePrice;
         window.copyDatabaseURL = copyDatabaseURL;
         window.checkSyncStatus = checkSyncStatus;
 
