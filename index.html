@@ -765,22 +765,22 @@
         const DB_REF_PATH = '/bulletData';
 
         // 默认数据
-        const defaultData = {
-            dates: [
-                '06-21 14:30', '06-22 14:30', '06-23 14:30', '06-24 14:30',
-                '06-25 14:30', '06-26 14:30', '06-27 14:30', '06-28 14:30',
-                '06-29 14:30', '06-30 14:30', '07-01 14:30', '07-02 14:30',
-                '07-03 14:30', '07-04 14:30'
-            ],
-            bullets: [
-                { name: '5.56×45mm M855', color: '#f0b90b',
-                    prices: [320, 328, 315, 302, 310, 334, 345, 340, 355, 348, 362, 370, 359, 375] },
-                { name: '7.62×39mm PS', color: '#3498db',
-                    prices: [580, 590, 575, 562, 570, 598, 610, 605, 625, 618, 640, 655, 648, 670] },
-                { name: '.45 ACP 弹', color: '#e67e22',
-                    prices: [210, 218, 212, 205, 215, 225, 220, 230, 228, 240, 245, 238, 250, 255] }
-            ]
-        };
+       const defaultData = {
+    dates: ['07-04 14:30'],   // 仅保留一个占位日期
+    bullets: [
+        { name: '5.56x45mm M995', color: '#f0b90b', prices: [4732] },
+        { name: '7.62x39mm PS', color: '#3498db', prices: [580] },
+        { name: '.45 ACP 弹', color: '#e67e22', prices: [210] },
+        { name: '5.56x45mm FMJ', color: '#2ecc71', prices: [150] },
+        { name: '.45 ACP AP RIP弹', color: '#9b59b6', prices: [250] },
+        { name: '.45 ACP AP弹', color: '#e74c3c', prices: [200] },
+        { name: '.45 ACP FMJ弹', color: '#1abc9c', prices: [180] },
+        { name: '.45 ACP JHP弹', color: '#f39c12', prices: [170] },
+        { name: '12.7x55mm双头弹', color: '#e67e22', prices: [500] },
+        { name: '12.7x55mm PS12B', color: '#3498db', prices: [600] },
+        { name: '5.56x45mm M855A1', color: '#f0b90b', prices: [1671] }
+    ]
+};
 
         let data = JSON.parse(JSON.stringify(defaultData));
 
@@ -815,21 +815,21 @@
         }
 
         // 云端操作
-        function loadFromCloud(callback) {
+       function loadFromCloud(callback) {
     db.ref(DB_REF_PATH).once('value').then(snapshot => {
         const val = snapshot.val();
         if (val && val.dates && val.bullets) {
             data = val;
         } else {
-            console.warn('云端无数据，使用本地备份');
+            // 云端无数据时，只使用本地备份，绝不自动写入云端
+            console.warn('云端无数据，使用本地备份（不会覆盖数据库）');
             loadLocalFallback();
-            // 不再自动调用 saveToCloud(data)！
         }
         if (callback) callback();
         refreshDashboard();
         updateSaveIndicator('saved');
     }).catch(err => {
-        console.error('Firebase 加载失败', err);
+        console.error('Firebase 加载失败，使用本地备份', err);
         loadLocalFallback();
         if (callback) callback();
         refreshDashboard();
