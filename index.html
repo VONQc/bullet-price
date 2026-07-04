@@ -816,25 +816,26 @@
 
         // 云端操作
         function loadFromCloud(callback) {
-            db.ref(DB_REF_PATH).once('value').then(snapshot => {
-                const val = snapshot.val();
-                if (val && val.dates && val.bullets) {
-                    data = val;
-                } else {
-                    data = JSON.parse(JSON.stringify(defaultData));
-                    saveToCloud(data);
-                }
-                if (callback) callback();
-                refreshDashboard();
-                updateSaveIndicator('saved');
-            }).catch(err => {
-                console.error('Firebase 加载失败，使用本地备份', err);
-                loadLocalFallback();
-                if (callback) callback();
-                refreshDashboard();
-                updateSaveIndicator('saved');
-            });
+    db.ref(DB_REF_PATH).once('value').then(snapshot => {
+        const val = snapshot.val();
+        if (val && val.dates && val.bullets) {
+            data = val;
+        } else {
+            console.warn('云端无数据，使用本地备份');
+            loadLocalFallback();
+            // 不再自动调用 saveToCloud(data)！
         }
+        if (callback) callback();
+        refreshDashboard();
+        updateSaveIndicator('saved');
+    }).catch(err => {
+        console.error('Firebase 加载失败', err);
+        loadLocalFallback();
+        if (callback) callback();
+        refreshDashboard();
+        updateSaveIndicator('saved');
+    });
+}
 
         function saveToCloud(d) {
             db.ref(DB_REF_PATH).set(d)
