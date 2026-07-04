@@ -5,9 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>三角洲行动 · 子弹价格仪表盘 & 管理后台（带时间）</title>
     <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#f0b90b">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
-    </script>
+    <meta name="theme-color" content="#f0b90b">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         :root {
             --bg: #0b1118;
@@ -118,13 +117,8 @@
             animation: none;
         }
         @keyframes pulse-dot {
-            0%,
-            100% {
-                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.5);
-            }
-            50% {
-                box-shadow: 0 0 0 8px rgba(46, 204, 113, 0);
-            }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.5); }
+            50% { box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); }
         }
 
         .main-container {
@@ -132,12 +126,8 @@
             margin: 0 auto;
             padding: 25px 20px 40px;
         }
-        .view {
-            display: none;
-        }
-        .view.active {
-            display: block;
-        }
+        .view { display: none; }
+        .view.active { display: block; }
 
         /* 仪表盘 */
         .dashboard {
@@ -166,7 +156,7 @@
             border: 1px solid var(--border);
             border-radius: 18px;
             padding: 22px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
         }
         .chart-header {
             display: flex;
@@ -191,9 +181,7 @@
             transition: opacity 0.2s;
             user-select: none;
         }
-        .legend-item.inactive {
-            opacity: 0.4;
-        }
+        .legend-item.inactive { opacity: 0.4; }
         .legend-color {
             width: 13px;
             height: 13px;
@@ -202,7 +190,7 @@
         }
         canvas {
             width: 100%;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0,0,0,0.2);
             border-radius: 10px;
             padding: 6px;
         }
@@ -222,7 +210,7 @@
         }
         .stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
         .stat-card::before {
             content: '';
@@ -246,19 +234,10 @@
             font-weight: 700;
             color: #fff;
         }
-        .stat-change {
-            font-size: 0.85rem;
-            margin-top: 4px;
-        }
-        .change-up {
-            color: var(--green);
-        }
-        .change-down {
-            color: var(--red);
-        }
-        .change-flat {
-            color: #f1c40f;
-        }
+        .stat-change { font-size: 0.85rem; margin-top: 4px; }
+        .change-up { color: var(--green); }
+        .change-down { color: var(--red); }
+        .change-flat { color: #f1c40f; }
         .stat-detail {
             display: flex;
             justify-content: space-between;
@@ -299,9 +278,7 @@
             border-bottom: 1px solid #1f3142;
             white-space: nowrap;
         }
-        .price-cell {
-            font-weight: 600;
-        }
+        .price-cell { font-weight: 600; }
         .note {
             text-align: center;
             color: #546b7c;
@@ -357,9 +334,7 @@
             opacity: 0.7;
             transition: opacity 0.2s;
         }
-        .date-tag .remove-date:hover {
-            opacity: 1;
-        }
+        .date-tag .remove-date:hover { opacity: 1; }
         .btn {
             padding: 8px 16px;
             border-radius: 8px;
@@ -444,18 +419,14 @@
             text-align: left;
             min-width: 140px;
         }
-        .editable-table th:nth-child(2) {
-            min-width: 50px;
-        }
+        .editable-table th:nth-child(2) { min-width: 50px; }
         .editable-table td {
             padding: 5px 4px;
             border-bottom: 1px solid #1f3142;
             text-align: center;
             vertical-align: middle;
         }
-        .editable-table td:first-child {
-            text-align: left;
-        }
+        .editable-table td:first-child { text-align: left; }
         .editable-table input[type="text"] {
             width: 100%;
             min-width: 100px;
@@ -497,7 +468,7 @@
         .editable-table input:focus {
             outline: none;
             border-color: #f0b90b;
-            box-shadow: 0 0 0 3px rgba(240, 185, 11, 0.1);
+            box-shadow: 0 0 0 3px rgba(240,185,11,0.1);
         }
         .color-cell {
             display: flex;
@@ -516,26 +487,16 @@
             font-size: 0.85rem;
             z-index: 999;
             animation: slideUp 0.35s ease-out;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        .toast.success {
-            border-color: var(--green);
-        }
-        .toast.error {
-            border-color: var(--red);
-        }
+        .toast.success { border-color: var(--green); }
+        .toast.error { border-color: var(--red); }
         @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* 密码弹窗 */
@@ -545,7 +506,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0,0,0,0.7);
             z-index: 200;
             display: flex;
             align-items: center;
@@ -558,13 +519,9 @@
             padding: 28px 24px;
             width: 380px;
             max-width: 90vw;
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 20px 45px rgba(0,0,0,0.7);
         }
-        .modal h3 {
-            margin-bottom: 16px;
-            color: #fff;
-            font-size: 1.1rem;
-        }
+        .modal h3 { margin-bottom: 16px; color: #fff; font-size: 1.1rem; }
         .modal input[type="password"] {
             width: 100%;
             padding: 10px 14px;
@@ -580,13 +537,60 @@
             outline: none;
             border-color: #f0b90b;
         }
-        .modal .btn-row {
-            justify-content: flex-end;
-        }
+        .modal .btn-row { justify-content: flex-end; }
         .modal .hint {
             font-size: 0.75rem;
             color: #546b7c;
             margin-top: 10px;
+        }
+
+        /* 管理面板增强样式 */
+        .stat-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .summary-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .summary-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f0b90b;
+        }
+        .summary-card .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .editable-table tr:hover td {
+            background: rgba(255,255,255,0.03);
+        }
+        .btn-danger-soft {
+            background: rgba(231,76,60,0.15);
+            color: #e74c3c;
+            border: 1px solid #e74c3c;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .btn-icon {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn-icon:hover {
+            background: var(--panel-bg);
+            color: #fff;
         }
 
         @media (max-width: 768px) {
@@ -598,19 +602,13 @@
                 padding: 7px 12px;
                 font-size: 0.78rem;
             }
-            .nav-brand {
-                font-size: 1rem;
-            }
-            .save-indicator {
-                display: none;
-            }
+            .nav-brand { font-size: 1rem; }
+            .save-indicator { display: none; }
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
                 gap: 10px;
             }
-            .stat-price {
-                font-size: 1.3rem;
-            }
+            .stat-price { font-size: 1.3rem; }
             .editable-table input[type="number"] {
                 width: 56px;
                 padding: 5px 2px;
@@ -665,7 +663,7 @@
                         <tbody></tbody>
                     </table>
                 </div>
-                <div class="note">💡 在管理后台可以添加带时间的日期（如 `07-05 14:30`），数据自动保存到本地。</div>
+                <div class="note">💡 在管理后台可以添加带时间的日期（如 `07-05 14:30`），数据自动同步到云端。</div>
             </div>
         </div>
 
@@ -676,10 +674,8 @@
                 <div id="passwordGate" style="display:flex;align-items:center;justify-content:center;min-height:300px;">
                     <div style="text-align:center;">
                         <h3 style="color:#fff;margin-bottom:10px;">🔐 请输入管理密码</h3>
-                        <p style="color:var(--text-secondary);margin-bottom:16px;font-size:0.85rem;">默认密码：<code
-                                style="background:#1a2a3a;padding:3px 8px;border-radius:4px;">admin123</code></p>
-                        <input type="password" id="passwordInput" placeholder="输入密码..."
-                        style="width:240px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:#0d1a26;color:#fff;font-size:0.9rem;font-family:inherit;text-align:center;">
+                        <p style="color:var(--text-secondary);margin-bottom:16px;font-size:0.85rem;">默认密码：<code style="background:#1a2a3a;padding:3px 8px;border-radius:4px;">admin123</code></p>
+                        <input type="password" id="passwordInput" placeholder="输入密码..." style="width:240px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:#0d1a26;color:#fff;font-size:0.9rem;font-family:inherit;text-align:center;">
                         <br><br>
                         <button class="btn btn-primary" onclick="verifyPassword()">进入管理后台</button>
                         <p id="passwordError" style="color:var(--red);font-size:0.8rem;margin-top:8px;display:none;">❌ 密码错误，请重试</p>
@@ -688,14 +684,18 @@
 
                 <!-- 管理主内容 -->
                 <div id="adminMain" style="display:none;">
+                    <!-- 数据总览卡片 -->
+                    <div class="stat-summary" id="adminSummary"></div>
+
                     <!-- 日期管理 -->
                     <div class="admin-section">
-                        <h3>📅 日期+时间管理 <span style="font-weight:400;font-size:0.78rem;color:var(--text-secondary);">（支持格式：MM-DD HH:mm）</span></h3>
+                        <h3>📅 日期时间管理</h3>
                         <div class="date-tags" id="dateTagsContainer"></div>
                         <div class="btn-row" style="margin-top:10px;">
-                            <button class="btn btn-sm" onclick="addDate()">➕ 添加日期时间</button>
+                            <button class="btn btn-sm" onclick="addDate()">➕ 添加日期</button>
                         </div>
                     </div>
+
                     <!-- 子弹编辑表格 -->
                     <div class="admin-section">
                         <h3>🔫 子弹与价格编辑</h3>
@@ -710,24 +710,25 @@
                             <button class="btn btn-sm btn-primary" onclick="manualSave()">💾 强制保存</button>
                         </div>
                     </div>
+
                     <!-- 数据同步中心 -->
-<div class="admin-section">
-    <h3>🔄 数据同步中心</h3>
-    <div id="syncStatus" style="font-size:0.9rem; color:var(--text-secondary);">
-        加载中...
-    </div>
-    <div class="btn-row" style="margin-top:8px;">
-        <button class="btn btn-sm" onclick="checkSyncStatus()">🔄 刷新状态</button>
-    </div>
-</div>
-                    <!-- 工具区 -->
                     <div class="admin-section">
-                        <h3>🛠️ 数据工具</h3>
+                        <h3>🔄 数据同步中心</h3>
+                        <div id="syncStatus" style="font-size:0.9rem; color:var(--text-secondary);">加载中...</div>
+                        <div class="btn-row" style="margin-top:8px;">
+                            <button class="btn btn-sm" onclick="checkSyncStatus()">🔄 刷新状态</button>
+                            <button class="btn btn-sm btn-icon" onclick="copyDatabaseURL()" title="复制数据库地址">📋 复制地址</button>
+                        </div>
+                    </div>
+
+                    <!-- 高级工具区 -->
+                    <div class="admin-section">
+                        <h3>🛠️ 高级工具</h3>
                         <div class="btn-row">
                             <button class="btn btn-sm" onclick="exportData()">📥 导出 JSON</button>
                             <button class="btn btn-sm" onclick="document.getElementById('importFileInput').click()">📤 导入 JSON</button>
                             <input type="file" id="importFileInput" accept=".json" style="display:none;" onchange="importData(event)">
-                            <button class="btn btn-sm btn-danger" onclick="resetData()">🔄 重置为默认数据</button>
+                            <button class="btn btn-sm btn-danger-soft" onclick="resetData()">🔄 重置数据</button>
                             <button class="btn btn-sm" onclick="changePasswordPrompt()">🔑 修改密码</button>
                         </div>
                     </div>
@@ -738,11 +739,12 @@
 
     <!-- Toast 容器 -->
     <div id="toastContainer"></div>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-<script>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script>
     (function() {
-        // ==================== 🔥 Firebase 配置（已替换为你的真实配置） ====================
+        // ==================== Firebase 配置 ====================
         const firebaseConfig = {
             apiKey: "AIzaSyAc6QXnTuqUmfhoNVsPuzEpexGhQuLkTms",
             authDomain: "bullet-price.firebaseapp.com",
@@ -753,34 +755,6 @@
             appId: "1:193851931243:web:2f2f8cff852a5e0289cf2e"
         };
 
-       // 读取并显示 OCR 同步状态
-function checkSyncStatus() {
-    const statusDiv = document.getElementById('syncStatus');
-    statusDiv.innerHTML = '检查中...';
-    db.ref('/bulletData/lastOcrSync').once('value').then(snapshot => {
-        const sync = snapshot.val();
-        if (sync) {
-            const time = new Date(sync.timestamp).toLocaleString('zh-CN');
-            const status = sync.status === 'success' ? '✅ 成功' : '❌ 失败';
-            statusDiv.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span><strong>最后同步：</strong>${time}</span>
-                    <span>${status}</span>
-                </div>
-                <div style="margin-top:4px;">来源：${sync.source || '未知'}</div>
-            `;
-        } else {
-            statusDiv.innerHTML = '暂无同步记录，运行 Python 脚本后会自动显示';
-        }
-    }).catch(err => {
-        statusDiv.innerHTML = '读取失败，请检查网络';
-        console.error(err);
-    });
-}
-
-// 进入管理面板时自动调用一次
-// 在 refreshAdminPanel 函数中添加 checkSyncStatus();
-        // 初始化 Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -790,7 +764,7 @@ function checkSyncStatus() {
         const DEFAULT_PASSWORD = 'admin123';
         const DB_REF_PATH = '/bulletData';
 
-        // ==================== 默认数据 ====================
+        // 默认数据
         const defaultData = {
             dates: [
                 '06-21 14:30', '06-22 14:30', '06-23 14:30', '06-24 14:30',
@@ -804,11 +778,10 @@ function checkSyncStatus() {
                 { name: '7.62×39mm PS', color: '#3498db',
                     prices: [580, 590, 575, 562, 570, 598, 610, 605, 625, 618, 640, 655, 648, 670] },
                 { name: '.45 ACP 弹', color: '#e67e22',
-                    prices: [210, 218, 212, 205, 215, 225, 220, 230, 228, 240, 245, 238, 250, 255] },
+                    prices: [210, 218, 212, 205, 215, 225, 220, 230, 228, 240, 245, 238, 250, 255] }
             ]
         };
 
-        // ==================== 全局数据 ====================
         let data = JSON.parse(JSON.stringify(defaultData));
 
         // ==================== Toast ====================
@@ -825,7 +798,7 @@ function checkSyncStatus() {
             }, 2200);
         }
 
-        // ==================== 保存指示器 ====================
+        // 保存指示器
         function updateSaveIndicator(status) {
             const dot = document.getElementById('saveDot');
             const text = document.getElementById('saveText');
@@ -841,7 +814,7 @@ function checkSyncStatus() {
             }
         }
 
-        // ==================== 云端操作 ====================
+        // 云端操作
         function loadFromCloud(callback) {
             db.ref(DB_REF_PATH).once('value').then(snapshot => {
                 const val = snapshot.val();
@@ -920,7 +893,7 @@ function checkSyncStatus() {
             }, 600);
         }
 
-        // ==================== 同步表格 ====================
+        // 同步表格
         function syncEditableTableToData() {
             const tbody = document.querySelector('#editableTable tbody');
             if (!tbody) return;
@@ -1128,7 +1101,7 @@ function checkSyncStatus() {
                 data.dates.forEach((d, di) => {
                     bodyHtml += `<td><input type="number" data-bi="${bi}" data-di="${di}" value="${b.prices[di]||0}" step="1"></td>`;
                 });
-                bodyHtml += `<td><button class="btn btn-xs btn-danger" onclick="removeBullet(${bi})">🗑</button></td>`;
+                bodyHtml += `<td><button class="btn-danger-soft" onclick="removeBullet(${bi})">🗑 删除</button></td>`;
                 bodyHtml += '</tr>';
             });
             tbody.innerHTML = bodyHtml;
@@ -1138,14 +1111,80 @@ function checkSyncStatus() {
             });
         }
 
-        function refreshAdminPanel() {
-            renderDateTags();
-            renderEditableTable();
-            checkSyncStatus();  // 新增，自动读取同步状态
+        // 数据总览卡片
+        function renderAdminSummary() {
+            const container = document.getElementById('adminSummary');
+            if (!container) return;
+            container.innerHTML = `
+                <div class="summary-card">
+                    <div class="value">${data.bullets.length}</div>
+                    <div class="label">子弹种类</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value">${data.dates.length}</div>
+                    <div class="label">记录天数</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value" id="syncTimeSummary">加载中…</div>
+                    <div class="label">最后同步</div>
+                </div>
+                <div class="summary-card">
+                    <div class="value">v2.0</div>
+                    <div class="label">数据版本</div>
+                </div>
+            `;
+            db.ref('/bulletData/lastOcrSync').once('value').then(snapshot => {
+                const sync = snapshot.val();
+                const timeStr = sync ? new Date(sync.timestamp).toLocaleString('zh-CN') : '从未';
+                const el = document.getElementById('syncTimeSummary');
+                if (el) el.textContent = timeStr;
+            });
         }
 
-        // ==================== 管理操作 ====================
-        function addDate() {
+        // 同步状态显示
+        function checkSyncStatus() {
+            const statusDiv = document.getElementById('syncStatus');
+            statusDiv.innerHTML = '检查中...';
+            db.ref('/bulletData/lastOcrSync').once('value').then(snapshot => {
+                const sync = snapshot.val();
+                if (sync) {
+                    const time = new Date(sync.timestamp).toLocaleString('zh-CN');
+                    const status = sync.status === 'success' ? '✅ 成功' : '❌ 失败';
+                    statusDiv.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span><strong>最后同步：</strong>${time}</span>
+                            <span>${status}</span>
+                        </div>
+                        <div style="margin-top:4px;">来源：${sync.source || '未知'}</div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = '暂无同步记录，运行 Python 脚本后会自动显示';
+                }
+            }).catch(err => {
+                statusDiv.innerHTML = '读取失败，请检查网络';
+                console.error(err);
+            });
+        }
+
+        // 复制数据库地址
+        function copyDatabaseURL() {
+            const url = 'https://bullet-price-default-rtdb.asia-southeast1.firebasedatabase.app';
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('数据库地址已复制');
+            }).catch(() => {
+                showToast('复制失败，请手动复制', 'error');
+            });
+        }
+
+        function refreshAdminPanel() {
+            renderAdminSummary();
+            renderDateTags();
+            renderEditableTable();
+            checkSyncStatus();
+        }
+
+        // 管理操作
+        function addDate() { /* 保持不变 */ 
             syncEditableTableToData();
             const newDate = prompt('请输入新日期+时间（格式：MM-DD HH:mm）：', '');
             if (!newDate) return;
@@ -1255,7 +1294,7 @@ function checkSyncStatus() {
             }
         }
 
-        // ==================== 视图切换 ====================
+        // 视图切换
         function switchView(view) {
             if (view === 'admin') {
                 syncEditableTableToData();
@@ -1271,7 +1310,7 @@ function checkSyncStatus() {
             document.getElementById(view==='dashboard'?'tabDashboard':'tabAdmin').classList.add('active');
         }
 
-        // ==================== 事件绑定 ====================
+        // 事件绑定
         document.getElementById('tabDashboard').addEventListener('click', ()=>switchView('dashboard'));
         document.getElementById('tabAdmin').addEventListener('click', ()=>switchView('admin'));
         document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key==='Enter') verifyPassword(); });
@@ -1289,7 +1328,7 @@ function checkSyncStatus() {
             }
         });
 
-        // ==================== 暴露全局函数 ====================
+        // 暴露全局函数
         window.verifyPassword = verifyPassword;
         window.addDate = addDate;
         window.addBullet = addBullet;
@@ -1298,8 +1337,10 @@ function checkSyncStatus() {
         window.resetData = resetData;
         window.changePasswordPrompt = changePasswordPrompt;
         window.removeBullet = removeBullet;
+        window.copyDatabaseURL = copyDatabaseURL;
+        window.checkSyncStatus = checkSyncStatus;
 
-        // ==================== 启动 ====================
+        // 启动
         function init() {
             updateSaveIndicator('saving');
             loadFromCloud(() => {
@@ -1309,18 +1350,16 @@ function checkSyncStatus() {
             });
         }
         init();
+
         // 注册 Service Worker
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js')
-    .then(registration => {
-      console.log('Service Worker 注册成功:', registration.scope);
-    })
-    .catch(err => {
-      console.error('Service Worker 注册失败:', err);
-    });
-}
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('Service Worker 注册成功'))
+                .catch(err => console.error('Service Worker 注册失败', err));
+        }
+
         console.log('🔫 三角洲 · 子弹价格系统（云同步版）已就绪');
     })();
-</script>
+    </script>
 </body>
 </html>
